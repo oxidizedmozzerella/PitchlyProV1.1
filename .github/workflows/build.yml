@@ -1,0 +1,28 @@
+name: Build PitchlyGraph VST3
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  vst3:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: x64,   runner: windows-latest,  arch: x64 }
+          - { name: ARM64, runner: windows-11-arm,  arch: ARM64 }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build -A ${{ matrix.arch }}
+      - name: Build
+        run: cmake --build build --config Release --parallel
+      - name: Collect
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item -Recurse build/PitchlyGraph_artefacts/Release/VST3/PitchlyGraph.vst3 dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PitchlyGraph-VST3-${{ matrix.name }}
+          path: dist
